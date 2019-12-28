@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="static/jquery-3.4.1.min.js"></script>
+    <style>
+
+        .box{
+            width: 50%;
+            margin: 0 auto;
+        }
+
+        .show {
+            width: 100%;
+            height: 400px;
+            overflow-y:scroll;
+
+            padding: 10px;
+            background-color: black;
+            color: white;
+        }
+
+        .common {
+            width: 100%;
+            height: 50px;
+        }
+
+        .common-input {
+            width: 80%;
+        }
+        .common-button {
+            width: 18%;
+        }
+    </style>
+
+</head>
+
+
+<body>
+<div class="box">
+
+
+    <div class="">
+        IP:<input id="ip" type="text" value="192.168.10.1"/>
+        Port:<input id="port" type="text" value="23"/>
+
+        <button type="button" onclick="openSession()">open</button>
+        <button type="button" onclick="closeSession()">close</button>
+
+    </div>
+
+    <div class="show">
+    </div>
+    <div class="common">
+        <input id="common-value" class="common-input" type="text" value="" placeholder="send your command" />
+        <button class="common-button" type="button" onclick="sendCommend()">Send</button>
+    </div>
+</div>
+
+</body>
+
+<script>
+
+    var socket;
+    if (typeof(WebSocket) == "undefined") {
+        console.log("您的浏览器不支持WebSocket");
+    } else {
+        console.log("您的浏览器支持WebSocket");
+        //实现化WebSocket对象，指定要连接的服务器地址与端口  建立连接
+        //等同于socket = new WebSocket("ws://localhost:8083/checkcentersys/websocket/20");
+        socket = new WebSocket("ws://localhost:8080/websocket/telnet".replace("http", "ws"));
+        //打开事件
+        socket.onopen = function() {
+            console.log("Socket 已打开");
+            //socket.send("这是来自客户端的消息" + location.href + new Date());
+        };
+        //获得消息事件
+        socket.onmessage = function(msg) {
+            show(msg.data)
+        };
+        //关闭事件
+        socket.onclose = function() {
+            console.log("Socket已关闭");
+        };
+        //发生了错误事件
+        socket.onerror = function() {
+            alert("Socket发生了错误");
+            //此时可以尝试刷新页面
+        }
+    }
+
+    function sendCommend() {
+        var common = $("#common-value").val();
+
+        $("#common-value").val("");
+
+        $(".show").append(common);
+        send(common);
+    }
+    
+    function show(value) {
+
+        if ('\n' == value) {
+            $(".show").append("<p></p>");
+        } else {
+            $(".show").append(value);
+        }
+    }
+
+    document.onkeydown = function (event) {
+        var e = event || window.event;
+        if (e && e.keyCode == 13) { //回车键的键值为13
+            sendCommend();
+        }
+    };
+
+
+    function send(common) {
+        $.get("/telnet/sendCommon",{common:common},function (res) {
+            console.log(res)
+        })
+    }
+
+    function openSession() {
+
+        $.get("/telnet/open",{ip:$("#ip").val(),port:$("#port").val()},function (res) {
+            console.log(res)
+        })
+    }
+
+    function closeSession() {
+        $.get("/telnet/close",function (res) {
+            console.log(res)
+        })
+    }
+
+    
+</script>
+</html>
